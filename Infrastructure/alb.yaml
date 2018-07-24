@@ -1,0 +1,201 @@
+Description: >
+    Deploys an Application Load Balancer that exposes our various ECS services.
+    We create them it a seperate nested template, so it can be referenced by all of the other nested templates.
+
+Parameters:
+
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+
+    VPC:
+        Type: AWS::EC2::VPC::Id
+        Description: Choose which VPC the Applicaion Load Balancer should be deployed to
+
+    Subnets:
+        Description: Choose which subnets the Applicaion Load Balancer should be deployed to
+        Type: List<AWS::EC2::Subnet::Id>
+
+    SecurityGroup:
+        Description: Select the Security Group to apply to the Applicaion Load Balancer
+        Type: AWS::EC2::SecurityGroup::Id
+
+    #CertificateArn:
+    #   Description: The ARN of aws certificate that will be used in LoadBalancer
+    #   Type: String
+
+    PortContainer:
+        Description: Port for target group
+        Type: String
+
+    IsMaster:
+        Type: String
+        Default: false
+        AllowedValues:
+            -   true
+            -   false
+
+Conditions:
+    Master: !Equals [!Ref IsMaster, true]
+    NotMaster: !Not [Condition: Master]
+
+
+Resources:
+
+    LoadBalancer:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+        Condition: Master
+        Properties:
+            Subnets: !Ref Subnets
+            SecurityGroups:
+                - !Ref SecurityGroup
+            Tags:
+                - Key: Name
+                  Value: !Ref EnvironmentName
+
+    LoadBalancerVPN:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+        Condition: NotMaster
+        Properties:
+            Subnets: !Ref Subnets
+            SecurityGroups:
+                - !Ref SecurityGroup
+            Tags:
+                - Key: Name
+                  Value: !Ref EnvironmentName
+
+    # HttpsLoadBalancerListener:
+    #     Type: AWS::ElasticLoadBalancingV2::Listener
+    #     Properties:
+    #         Certificates:
+    #             - CertificateArn: !Ref CertificateArn
+    #         LoadBalancerArn: !Ref LoadBalancer
+    #         Port: 443
+    #         Protocol: HTTPS
+    #         DefaultActions:
+    #             - Type: forward
+    #               TargetGroupArn: !Ref TargetGroup
+
+    HttpLoadBalancerListener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Condition: Master
+        Properties:
+            LoadBalancerArn: !Ref LoadBalancer
+            Port: 80
+            Protocol: HTTP
+            DefaultActions:
+                - Type: forward
+                  TargetGroupArn: !Ref TargetGroup
+    TargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Condition: Master
+        Properties:
+            VpcId: !Ref VPC
+            Port: !Ref PortContainer
+            Protocol: HTTP
+            Matcher:
+                HttpCode: 200-499
+            HealthCheckPath: /
+            HealthCheckProtocol: HTTP
+            HealthCheckIntervalSeconds: 60
+            HealthCheckTimeoutSeconds: 30
+            HealthyThresholdCount: 10
+            UnhealthyThresholdCount: 10
+            Tags:
+                -   Key: Name
+                    Value: !Ref EnvironmentName
+
+    HttpLoadBalancerListenerVPN:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Condition: NotMaster
+        Properties:
+            LoadBalancerArn: !Ref LoadBalancerVPN
+            Port: 80
+            Protocol: HTTP
+            DefaultActions:
+                - Type: forward
+                  TargetGroupArn: !Ref TargetGroupStaging
+    TargetGroupStaging:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Condition: NotMaster
+        Properties:
+            VpcId: !Ref VPC
+            Port: !Ref PortContainer
+            Protocol: HTTP
+            Matcher:
+                HttpCode: 200-499
+            HealthCheckPath: /
+            HealthCheckProtocol: HTTP
+            HealthCheckIntervalSeconds: 60
+            HealthCheckTimeoutSeconds: 30
+            HealthyThresholdCount: 10
+            UnhealthyThresholdCount: 10
+            Tags:
+                -   Key: Name
+                    Value: !Sub ${EnvironmentName}-Staging
+    TargetGroupDevelopment:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Condition: NotMaster
+        Properties:
+            VpcId: !Ref VPC
+            Port: !Ref PortContainer
+            Protocol: HTTP
+            Matcher:
+                HttpCode: 200-499
+            HealthCheckPath: /
+            HealthCheckProtocol: HTTP
+            HealthCheckIntervalSeconds: 60
+            HealthCheckTimeoutSeconds: 30
+            HealthyThresholdCount: 10
+            UnhealthyThresholdCount: 10
+            Tags:
+                -   Key: Name
+                    Value: !Sub ${EnvironmentName}-Development
+
+Outputs:
+
+    LoadBalancer:
+        Condition: Master
+        Description: A reference to the Application Load Balancer
+        Value: !Ref LoadBalancer
+
+    LoadBalancerUrl:
+        Condition: Master
+        Description: The URL of the ALB
+        Value: !GetAtt LoadBalancer.DNSName
+
+    HttpListener:
+        Condition: Master
+        Description: A reference to a port 80 listener
+        Value: !Ref HttpLoadBalancerListener
+
+    TargetGroup:
+        Condition: Master
+        Value: !Ref TargetGroup
+
+    LoadBalancerVPN:
+        Condition: NotMaster
+        Description: A reference to the Application Load Balancer
+        Value: !Ref LoadBalancerVPN
+
+    LoadBalancerVPNUrl:
+        Condition: NotMaster
+        Description: The URL of the ALB
+        Value: !GetAtt LoadBalancerVPN.DNSName
+
+    HttpListenerVPN:
+        Condition: NotMaster
+        Description: A reference to a port 80 listener
+        Value: !Ref HttpLoadBalancerListenerVPN
+
+    TargetGroupStaging:
+        Condition: NotMaster
+        Value: !Ref TargetGroupStaging
+
+    TargetGroupDevelopment:
+        Condition: NotMaster
+        Value: !Ref TargetGroupDevelopment
+
+    # HttpsListener:
+    #     Description: A reference to a port 443 listener
+    #     Value: !Ref HttpsLoadBalancerListener

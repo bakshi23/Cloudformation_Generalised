@@ -1,0 +1,120 @@
+Description: Security Groups Resources
+
+Parameters:
+    VPC:
+        Description: VPC where the security groups will be added
+        Type: String
+
+    EnvironmentName:
+        Description: Enviroment for the resources
+        Type: String
+
+    IsMaster:
+        Type: String
+        Default: false
+        AllowedValues:
+            -   true
+            -   false
+
+Conditions:
+    Master: !Equals [!Ref IsMaster, true]
+    NotMaster: !Not [Condition: Master]
+
+Resources:
+
+    #Secutiry Group
+    #Services that allow us to enable trafic through ports/protocols
+    PublicSG:
+        Type: AWS::EC2::SecurityGroup
+        Condition: Master
+        Properties:
+            VpcId: !Ref VPC
+            GroupDescription: !Sub ${AWS::StackName} public
+            SecurityGroupIngress:
+                -   IpProtocol: tcp
+                    FromPort: '443'
+                    ToPort: '443'
+                    CidrIp: "0.0.0.0/0"
+                -   IpProtocol: tcp
+                    FromPort: '80'
+                    ToPort: '80'
+                    CidrIp: "0.0.0.0/0"
+            Tags:
+                -   Key: StackName
+                    Value: !Ref AWS::StackName
+                -   Key: Name
+                    Value: !Ref EnvironmentName
+
+    VPNAccessSG:
+        Type: AWS::EC2::SecurityGroup
+        Condition: NotMaster
+        Properties:
+            VpcId: !Ref VPC
+            GroupDescription: !Sub ${AWS::StackName} VPN access
+            SecurityGroupIngress:
+                -   IpProtocol: tcp
+                    FromPort: '80'
+                    ToPort: '80'
+                    CidrIp: "52.40.155.160/32"
+            Tags:
+                -   Key: StackName
+                    Value: !Ref AWS::StackName
+                -   Key: Name
+                    Value: !Ref EnvironmentName
+
+    PrivateSG:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            VpcId: !Ref VPC
+            GroupDescription: !Sub ${AWS::StackName} private
+            SecurityGroupIngress:
+                -   IpProtocol: -1
+                    SourceSecurityGroupId: !If [Master, !Ref PublicSG, !Ref VPNAccessSG]
+            Tags:
+                -   Key: StackName
+                    Value: !Ref AWS::StackName
+                -   Key: Name
+                    Value: !Ref EnvironmentName
+
+    DatabaseSG:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: !Sub ${AWS::StackName} database
+            VpcId: !Ref VPC
+            SecurityGroupIngress:
+                -   SourceSecurityGroupId: !Ref PrivateSG
+                    FromPort: '5432'
+                    IpProtocol: tcp
+                    ToPort: '5432'
+                -   SourceSecurityGroupId: !Ref PrivateSG
+                    FromPort: '6379'
+                    IpProtocol: tcp
+                    ToPort: '6379'
+            Tags:
+                -   Key: StackName
+                    Value: !Ref AWS::StackName
+                -   Key: Name
+                    Value: !Ref EnvironmentName
+
+Outputs:
+    PublicSG:
+        Condition: Master
+        Description: Security group for the outside network trafic
+        Value: !Ref PublicSG
+
+    VPNAccessSG:
+        Condition: NotMaster
+        Description: Security group for the VPN network trafic
+        Value: !Ref VPNAccessSG
+
+    PrivateSG:
+        Description: Security group for the internal network trafic
+        Value: !Ref PrivateSG
+
+    DatabaseSG:
+        Description: Security group for internal database access
+        Value: !Ref DatabaseSG
+
+    ListPrivateSG:
+        Description: A list of the private security groups
+        Value: !Join [ ",", [ !Ref PrivateSG, !Ref DatabaseSG ]]

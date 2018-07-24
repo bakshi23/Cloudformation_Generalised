@@ -1,0 +1,238 @@
+Description: SSM Parameter Stroe Resources
+
+Parameters:
+    EnvironmentName:
+        Type: String
+
+    EnvironmentSet:
+        Type: String
+
+    DBEndpointAddress:
+        Type: String
+
+    DBEndpointPort:
+        Type: String
+
+    CacheEndpointAddress:
+        Type: String
+
+    DBUSERNAME:
+        Type: String
+        Default: postgres
+
+    DBPASSWORD:
+        Type: String
+
+    EMAILUSERNAME:
+        Type: String
+        Default: username@gmail.com
+
+    CSMIUSERNAME:
+        Type: String
+        Default: csmiusername
+
+    CSMIPASSWORD:
+        Type: String
+
+    APPLESHAREDSECRET:
+        Type: String
+
+    AWSACCESSKEY:
+        Type: String
+        Default: awsaccesskey
+
+    AWSSECRETKEY:
+        Type: String
+
+    RAILSPORT:
+        Type: String
+        Default: 3000
+
+    SECRETKEYBASE:
+        Type: String
+
+    STRIPESECRETKEY:
+        Type: String
+
+    STRIPEPUBLISHABLEKEY:
+        Type: String
+        Default: stripepublishablekey
+
+    RAILSSECRET:
+        Type: String
+
+    SALESFORCECLIENTID:
+        Type: String
+        Default: salesforceclientid
+
+    SALESFORCEUSERNAME:
+        Type: String
+        Default: salesforceusername
+
+    SALESFORCEHOST:
+        Type: String
+        Default: salesforcehost
+
+    SALESFORCEINSTANCEURL:
+        Type: String
+        Default: salesforceinstanceurl
+
+    SALESFORCEJWTKEY:
+        Type: String
+        Default: salesforcejwtkey
+
+Resources:
+
+    DBEndpointAddressParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/DB_HOST
+            Type: String
+            Value: !Ref DBEndpointAddress
+
+    DBEndpointPortParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/DB_PORT
+            Type: String
+            Value: !Ref DBEndpointPort
+
+    CacheEndpointAddressParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/REDIS_HOST
+            Type: String
+            Value: !Ref CacheEndpointAddress
+
+    CacheEndpointURLParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/REDIS_URL
+            Type: String
+            Value: !Ref CacheEndpointAddress
+
+    DBUSERNAMEParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/DB_USERNAME
+            Type: String
+            Value: !Ref DBUSERNAME
+
+    DBPASSWORDParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/DB_PASSWORD
+            Type: String
+            Value: !Ref DBPASSWORD
+
+    EMAILUSERNAMEParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/EMAIL_USERNAME
+            Type: String
+            Value: !Ref EMAILUSERNAME
+
+    CSMIUSERNAMEParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/CSMI_USERNAME
+            Type: String
+            Value: !Ref CSMIUSERNAME
+
+    CSMIPASSWORDParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/CSMI_PASSWORD
+            Type: String
+            Value: !Ref CSMIPASSWORD
+
+    APPLESHAREDSECRETParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/APPLE_SHARED_SECRET
+            Type: String
+            Value: !Ref APPLESHAREDSECRET
+
+    AWSACCESSKEYParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/AWS_ACCESS_KEY
+            Type: String
+            Value: !Ref AWSACCESSKEY
+
+    AWSSECRETKEYParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/AWS_SECRET_KEY
+            Type: String
+            Value: !Ref AWSSECRETKEY
+
+    RAILSPORTParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/RAILS_PORT
+            Type: String
+            Value: !Ref RAILSPORT
+
+    SECRETKEYBASEParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/SECRET_KEY_BASE
+            Type: String
+            Value: !Ref SECRETKEYBASE
+
+    STRIPESECRETKEYParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/STRIPE_SECRET_KEY
+            Type: String
+            Value: !Ref STRIPESECRETKEY
+
+    STRIPEPUBLISHABLEKEYParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/STRIPE_PUBLISHABLE_KEY
+            Type: String
+            Value: !Ref STRIPEPUBLISHABLEKEY
+
+    RAILSSECRETParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/RAILS_SECRET
+            Type: String
+            Value: !Ref RAILSSECRET
+
+    SALESFORCECLIENTIDParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/SALESFORCE_CLIENT_ID
+            Type: String
+            Value: !Ref SALESFORCECLIENTID
+
+    SALESFORCEUSERNAMEParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/SALESFORCE_USERNAME
+            Type: String
+            Value: !Ref SALESFORCEUSERNAME
+
+    SALESFORCEHOSTParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/SALESFORCE_HOST
+            Type: String
+            Value: !Ref SALESFORCEHOST
+
+    SALESFORCEINSTANCEURLParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/SALESFORCE_INSTANCE_URL
+            Type: String
+            Value: !Ref SALESFORCEINSTANCEURL
+
+    SALESFORCEJWTKEYParameter:
+        Type: "AWS::SSM::Parameter"
+        Properties:
+            Name: !Sub /${EnvironmentName}/${EnvironmentSet}/SALESFORCE_JWT_KEY
+            Type: String
+            Value: !Ref SALESFORCEJWTKEY

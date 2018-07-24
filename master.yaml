@@ -1,0 +1,135 @@
+Description: >
+    Generalized infrastructure with main features: VPC,SG,ECR,ECS,ELB,SSM and services.
+    Make sure you give a correct:
+        - KeyPair for instance
+        - KmsKeyIdWS for db instance
+        - IAMUser for the ECR
+
+
+Parameters:
+    #The prefix S# is for parameters for Stack general
+    TemplateBucket:
+        Description: Name of the bucket where the idrsa key is located in an encrypted form
+        Type: String
+        Default: demo-mohit
+        AllowedValues:
+            - demo-mohit
+
+    #database parameters WebServer
+    InstanceClassWS:
+        Description: Name of the compute and capacity clasess of the database
+        Default: db.t2.small
+        Type: String
+
+    EngineWS:
+        Description: Database engine that the DB instance use.
+        Default: Postgres
+        Type: String
+
+    MultiAZWS:
+        Description: Specifies if the database instance is a multiple Availability Zone deployment
+        Type: String
+        Default: true
+        AllowedValues:
+            -   true
+            -   false
+
+    KmsKeyIdWS:
+        Description: Master key that's used to encrypt the DB instance
+        Type: String
+        Default: arn:aws:kms:ap-southeast-1:202279780353:key/8dec5822-d743-42d8-85d7-b93b95be4e90
+
+    StorageEncryptedWS:
+        Description: If you define a KmsKeyID you have to encrypt the storage.
+        Type: String
+        Default: true
+        AllowedValues:
+            -   true
+            -   false
+
+    AllocatedStorageWS:
+        Description: Allocated storage size fot the db (GB)
+        Default: 100
+        Type: Number
+
+    DBUSERNAME:
+         Type: String
+         Default: postgres
+
+    DBPASSWORD:
+         Type: String
+         NoEcho: true
+         MinLength: 8
+
+ #LoadBalancer
+    PortContainer:
+        Description: Port running the task container
+        Type: String
+        Default: 3000
+
+
+  #cluster configuration
+
+
+##########Resources Definitions####################
+Resources:
+    #Network VPC
+    VPC:
+       Type: AWS::CloudFormation::Stack
+       Properties:
+           TemplateURL: !Sub  https://s3.amazonaws.com/${TemplateBucket}/Infrastructure/vpc.yaml
+           Parameters:
+               EnvironmentName:    !Sub ${AWS::StackName}-vpc
+               VpcCIDR:            10.60.0.0/16
+               PublicSubnet1CIDR:  10.60.8.0/24
+               PublicSubnet2CIDR:  10.60.16.0/24
+               PublicSubnet3CIDR:  10.60.24.0/24
+               PrivateSubnet1CIDR: 10.60.32.0/24
+               PrivateSubnet2CIDR: 10.60.40.0/24
+               PrivateSubnet3CIDR: 10.60.48.0/24
+#Secutiry Group
+    STACKSG:
+        Type: AWS::CloudFormation::Stack
+        DependsOn: VPC
+        Properties:
+            TemplateURL: !Sub  https://s3.amazonaws.com/${TemplateBucket}/Infrastructure/vpc-sg.yaml
+            Parameters:
+                VPC: !GetAtt VPC.Outputs.VPC
+                EnvironmentName: !Sub ${AWS::StackName}-sg
+                IsMaster: true
+      #Database
+  #  STACKDB:
+  #      Type: AWS::CloudFormation::Stack
+  #      DependsOn: STACKSG
+  #      Properties:
+  #          TemplateURL: !Sub  https://s3.amazonaws.com/${TemplateBucket}/Infrastructure/databases/rds.yaml
+  #          Parameters:
+  #              EnvironmentName: !Sub ${AWS::StackName}-db
+  #              VPC: !GetAtt VPC.Outputs.VPC
+  #              Subnets: !GetAtt VPC.Outputs.PrivateSubnets
+  #              VPCSecurityGroups: !GetAtt STACKSG.Outputs.DatabaseSG
+  #              DBName: !Sub ${AWS::StackName}_db
+  #              DBInstanceIdentifier: !Sub ${AWS::StackName}-db
+  #              Engine: !Ref EngineWS
+  #              MultiAZ: !Ref MultiAZWS
+  #              StorageEncrypted: !Ref StorageEncryptedWS
+  #              KmsKeyId: !Ref KmsKeyIdWS
+  #              MasterUsername: !Ref DBUSERNAME
+  #              MasterUserPassword: !Ref DBPASSWORD
+  #              DBInstanceClass: !Ref InstanceClassWS
+  #              AllocatedStorage: !Ref AllocatedStorageWS
+
+#Elastic Load Balancer
+    STACKALB:
+        Type: AWS::CloudFormation::Stack
+        DependsOn: STACKSG
+        Properties:
+            TemplateURL: !Sub  https://s3.amazonaws.com/${TemplateBucket}/Infrastructure/alb.yaml
+            Parameters:
+                EnvironmentName: !Sub ${AWS::StackName}-alb
+                VPC: !GetAtt VPC.Outputs.VPC
+                Subnets: !GetAtt VPC.Outputs.PublicSubnets
+            #   CertificateArn: !Ref CertificateARN
+                SecurityGroup: !GetAtt STACKSG.Outputs.PublicSG
+                PortContainer: !Ref PortContainer
+                IsMaster: true
